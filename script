@@ -1,0 +1,39 @@
+# List of websites to ping
+$websites = @("google.com", "yahoo.com", "bing.com", "github.com", "amazon.com")
+
+# Prepare an array to hold the results
+$results = @()
+
+# Loop through each website and perform the ping test
+foreach ($website in $websites) {
+    try {
+        # Perform the ping with 4 attempts
+        $pingResult = Test-Connection -ComputerName $website -Count 4 -ErrorAction Stop
+
+        # Extract the first successful ping result (IP address)
+        $ipAddress = $pingResult.Address
+        # Calculate the average round-trip time
+        $avgPing = ($pingResult | Measure-Object ResponseTime -Average).Average
+
+        # Store the result in the array
+        $results += [PSCustomObject]@{
+            Website    = $website
+            IPAddress  = $ipAddress
+            AvgPingMs  = [math]::Round($avgPing, 2)
+        }
+    }
+    catch {
+        # Handle ping failure (if the website is unreachable)
+        $results += [PSCustomObject]@{
+            Website    = $website
+            IPAddress  = "Ping failed"
+            AvgPingMs  = "N/A"
+        }
+    }
+}
+
+# Export the results to a CSV file
+$results | Export-Csv -Path "ping_results.csv" -NoTypeInformation -Force
+
+# Output a message to indicate completion
+Write-Host "Ping results have been successfully saved to 'ping_results.csv'."
